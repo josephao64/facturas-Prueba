@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagar Facturas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h2>Pago de Facturas</h2>
+
+    <!-- Tabla de facturas -->
+    <table>
+        <thead>
+            <tr>
+                <th>Seleccionar</th>
+                <th>Monto Factura</th>
+                <th>Saldo Pendiente</th>
+                <th>Sucursal</th>
+                <th>Estado</th>
+                <th>Boleta ID (después del pago)</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="facturas-table">
+            <!-- Facturas generadas dinámicamente -->
+        </tbody>
+    </table>
+
+    <!-- Formulario para aplicar pago -->
+    <div class="form-group">
+        <label for="monto">Monto total a aplicar:</label>
+        <input type="number" id="monto" placeholder="Ingrese el monto del pago">
+    </div>
+
+    <div class="form-group">
+        <label for="fecha">Fecha de Pago:</label>
+        <input type="date" id="fecha">
+    </div>
+
+    <div class="form-group">
+        <label for="numero-boleta">Número de Boleta (ID):</label>
+        <input type="text" id="numero-boleta" placeholder="Ingrese el número de boleta">
+    </div>
+
+    <button class="btn" id="aplicar-pago" disabled>Aplicar Pago</button>
+    <button class="btn" id="generar-reporte">Generar Reporte</button>
+
+    <!-- Modal para ver pago realizado -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span id="close-modal" class="close">&times;</span>
+            <h3>Detalles del Pago</h3>
+            <p id="detalles-pago"></p>
+        </div>
+    </div>
+
+    <!-- Sección para mostrar el reporte en formato de tabla -->
+    <div id="reporte-section" style="display:none;">
+        <h3>Reporte de Facturas y Boletas Asociadas</h3>
+        <table id="reporte-table">
+            <thead>
+                <tr>
+                    <th>Factura</th>
+                    <th>Monto Factura</th>
+                    <th>Saldo Pendiente</th>
+                    <th>Sucursal</th>
+                    <th>Estado</th>
+                    <th>Boleta ID</th>
+                    <th>Fecha Pago</th>
+                    <th>Monto Pagado</th>
+                </tr>
+            </thead>
+            <tbody id="reporte-contenido">
+                <!-- Contenido del reporte generado dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
