@@ -1,11 +1,11 @@
-/* Estilo general para el cuerpo */
+/* Estilo general */
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
     padding: 20px;
 }
 
-/* Estilo para las tablas de facturas y el reporte */
+/* Estilo para las tablas */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -37,12 +37,18 @@ td {
     border: none;
     cursor: pointer;
     margin-right: 10px;
+    transition: background-color 0.3s;
 }
 
 /* Botón deshabilitado */
 .btn:disabled {
     background-color: #ccc;
     cursor: not-allowed;
+}
+
+/* Estilo para botones al pasar el cursor */
+.btn:hover:not(:disabled) {
+    background-color: #218838;
 }
 
 /* Estilo de los formularios */
@@ -77,7 +83,7 @@ td {
     color: #721c24; /* Rojo oscuro */
 }
 
-/* Estilos para el modal de los pagos realizados */
+/* Modal para mostrar detalles de pagos */
 .modal {
     display: none;
     position: fixed;
@@ -104,7 +110,7 @@ td {
     cursor: pointer;
 }
 
-/* Estilo del reporte de facturas y boletas */
+/* Estilo del reporte */
 #reporte-section {
     background-color: #f9f9f9;
     padding: 20px;

@@ -5,9 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pagar Facturas</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Integración de SweetAlert2 -->
 </head>
 <body>
     <h2>Pago de Facturas</h2>
+
+    <!-- Botón para abrir la página de gestión de empresas -->
+    <a href="empresas.html" target="_blank" class="btn">Gestionar Empresas</a>
 
     <!-- Tabla de facturas -->
     <table>
@@ -23,7 +27,7 @@
             </tr>
         </thead>
         <tbody id="facturas-table">
-            <!-- Facturas generadas dinámicamente -->
+            <!-- Las facturas se generarán dinámicamente a partir de scripts.js -->
         </tbody>
     </table>
 
@@ -77,6 +81,6 @@
         </table>
     </div>
 
-    <script src="scripts.js"></script>
+    <script src="scripts.js"></script> <!-- Conexión con el archivo de scripts -->
 </body>
 </html>

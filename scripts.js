@@ -1,47 +1,11 @@
-// Facturas de ejemplo (ahora con múltiples boletas por factura y dos nuevas facturas)
+// Facturas de ejemplo (múltiples facturas)
 const facturas = [
-    {
-        monto: 100.50,
-        saldoPendiente: 100.50,
-        sucursal: 'Sucursal 1',
-        estado: 'Pendiente',
-        boletas: []
-    },
-    {
-        monto: 200.00,
-        saldoPendiente: 200.00,
-        sucursal: 'Sucursal 1',
-        estado: 'Pendiente',
-        boletas: []
-    },
-    {
-        monto: 150.75,
-        saldoPendiente: 150.75,
-        sucursal: 'Sucursal 2',
-        estado: 'Pendiente',
-        boletas: []
-    },
-    {
-        monto: 300.50,
-        saldoPendiente: 300.50,
-        sucursal: 'Sucursal 2',
-        estado: 'Pendiente',
-        boletas: []
-    },
-    {
-        monto: 500.00,
-        saldoPendiente: 500.00,
-        sucursal: 'Sucursal 3',
-        estado: 'Pendiente',
-        boletas: []
-    },
-    {
-        monto: 650.00,
-        saldoPendiente: 650.00,
-        sucursal: 'Sucursal 3',
-        estado: 'Pendiente',
-        boletas: []
-    }
+    { monto: 100.50, saldoPendiente: 100.50, sucursal: 'Sucursal 1', estado: 'Pendiente', boletas: [] },
+    { monto: 200.00, saldoPendiente: 200.00, sucursal: 'Sucursal 1', estado: 'Pendiente', boletas: [] },
+    { monto: 150.75, saldoPendiente: 150.75, sucursal: 'Sucursal 2', estado: 'Pendiente', boletas: [] },
+    { monto: 300.50, saldoPendiente: 300.50, sucursal: 'Sucursal 2', estado: 'Pendiente', boletas: [] },
+    { monto: 500.00, saldoPendiente: 500.00, sucursal: 'Sucursal 3', estado: 'Pendiente', boletas: [] },
+    { monto: 650.00, saldoPendiente: 650.00, sucursal: 'Sucursal 3', estado: 'Pendiente', boletas: [] }
 ];
 
 // Lista de facturas seleccionadas
@@ -100,16 +64,30 @@ document.addEventListener('change', function (event) {
 // Función para validar el monto de pago
 function validarPago() {
     const montoTotal = parseFloat(document.getElementById('monto').value);
-    let saldoTotal = facturasSeleccionadas.reduce((acc, facturaSeleccionada) => acc + facturaSeleccionada.saldoPendiente, 0);
 
+    // Verificar si el monto es válido
     if (isNaN(montoTotal) || montoTotal <= 0) {
-        alert('Por favor ingrese un monto válido.');
+        Swal.fire('Error', 'Por favor ingrese un monto válido.', 'error');
         return false;
     }
 
-    if (montoTotal > saldoTotal) {
-        alert('El monto ingresado excede el saldo pendiente total.');
-        return false;
+    let totalPagado = 0;
+    let saldoTotal = 0;
+
+    // Verificar para cada factura seleccionada
+    for (const facturaSeleccionada of facturasSeleccionadas) {
+        const factura = facturas[facturaSeleccionada.index];
+        saldoTotal += factura.saldoPendiente;
+
+        // Sumar todos los pagos realizados en las boletas
+        const pagosPrevios = factura.boletas.reduce((sum, boleta) => sum + boleta.monto, 0);
+        totalPagado = pagosPrevios + montoTotal;
+
+        // Verificar si el pago excede el monto original de la factura
+        if (totalPagado > factura.monto) {
+            Swal.fire('Advertencia', `El pago total (incluyendo pagos previos) excede el monto de la factura (Factura ${facturaSeleccionada.index + 1}).`, 'warning');
+            return false;
+        }
     }
 
     return true;
@@ -124,7 +102,7 @@ document.getElementById('aplicar-pago').addEventListener('click', function () {
     const numeroBoleta = document.getElementById('numero-boleta').value;
 
     if (!fechaPago || !numeroBoleta) {
-        alert('Por favor complete todos los campos: fecha y número de boleta.');
+        Swal.fire('Error', 'Por favor complete todos los campos: fecha y número de boleta.', 'error');
         return;
     }
 
@@ -134,6 +112,7 @@ document.getElementById('aplicar-pago').addEventListener('click', function () {
         const factura = facturas[facturaSeleccionada.index];
         let pagoAplicado = 0;
 
+        // Aplicar solo lo que se puede al saldo pendiente
         if (montoRestante >= factura.saldoPendiente) {
             pagoAplicado = factura.saldoPendiente;
             montoRestante -= factura.saldoPendiente;
@@ -153,6 +132,7 @@ document.getElementById('aplicar-pago').addEventListener('click', function () {
             fecha: fechaPago
         });
 
+        // Actualizar el DOM con el nuevo saldo
         document.getElementById(`saldo-${facturaSeleccionada.index}`).innerText = factura.saldoPendiente.toFixed(2);
         document.getElementById(`estado-${facturaSeleccionada.index}`).innerText = factura.estado;
 
@@ -166,7 +146,13 @@ document.getElementById('aplicar-pago').addEventListener('click', function () {
         document.getElementById(`ver-pago-${facturaSeleccionada.index}`).disabled = false;
     });
 
-    alert(`Pago aplicado con éxito. Fecha: ${fechaPago}, Número de Boleta: ${numeroBoleta}`);
+    // Mostrar notificación de éxito usando SweetAlert
+    Swal.fire({
+        title: '¡Pago aplicado con éxito!',
+        text: `Fecha: ${fechaPago}, Número de Boleta: ${numeroBoleta}`,
+        icon: 'success',
+        confirmButtonText: 'Aceptar'
+    });
 
     // Limpiar el formulario
     document.getElementById('monto').value = '';

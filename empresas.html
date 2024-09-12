@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Empresas, Sucursales y Proveedores</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <h2>Gestión de Empresas, Sucursales y Proveedores</h2>
+
+    <div class="tabs">
+        <button class="tab-link" onclick="openTab(event, 'empresas')">Empresas</button>
+        <button class="tab-link" onclick="openTab(event, 'sucursales')">Sucursales</button>
+        <button class="tab-link" onclick="openTab(event, 'proveedores')">Proveedores</button>
+    </div>
+
+    <!-- Contenido de la pestaña de Empresas -->
+    <div id="empresas" class="tab-content">
+        <h3>Empresas</h3>
+        <div class="form-group">
+            <label for="nombre-empresa">Nombre de la Empresa:</label>
+            <input type="text" id="nombre-empresa">
+        </div>
+        <button class="btn" id="agregar-empresa">Agregar Empresa</button>
+
+        <h4>Listado de Empresas</h4>
+        <ul id="lista-empresas"></ul>
+    </div>
+
+    <!-- Contenido de la pestaña de Sucursales -->
+    <div id="sucursales" class="tab-content" style="display:none;">
+        <h3>Sucursales</h3>
+        <div class="form-group">
+            <label for="empresa-sucursal">Seleccione la Empresa:</label>
+            <select id="empresa-sucursal"></select>
+        </div>
+        <div class="form-group">
+            <label for="nombre-sucursal">Nombre de la Sucursal:</label>
+            <input type="text" id="nombre-sucursal">
+        </div>
+        <button class="btn" id="agregar-sucursal">Agregar Sucursal</button>
+
+        <h4>Listado de Sucursales y Empresas Asociadas</h4>
+        <ul id="lista-sucursales"></ul>
+    </div>
+
+    <!-- Contenido de la pestaña de Proveedores -->
+    <div id="proveedores" class="tab-content" style="display:none;">
+        <h3>Proveedores</h3>
+        <div class="form-group">
+            <label for="nombre-proveedor">Nombre del Proveedor:</label>
+            <input type="text" id="nombre-proveedor">
+        </div>
+        <div class="form-group">
+            <label for="dias-credito">Días de Crédito:</label>
+            <input type="number" id="dias-credito">
+        </div>
+        <button class="btn" id="agregar-proveedor">Agregar Proveedor</button>
+
+        <h4>Listado de Proveedores</h4>
+        <ul id="lista-proveedores"></ul>
+    </div>
+
+    <script src="gestionar.js"></script>
+</body>
+</html>
