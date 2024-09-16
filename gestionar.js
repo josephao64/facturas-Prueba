@@ -1,18 +1,22 @@
+// gestionar.js
+
 // Crear/abrir la base de datos de IndexedDB
 let db;
 const request = indexedDB.open("GestionDB", 1);
 
 request.onupgradeneeded = function(event) {
     db = event.target.result;
-    const empresaStore = db.createObjectStore("empresas", { keyPath: "id", autoIncrement: true });
-    const sucursalStore = db.createObjectStore("sucursales", { keyPath: "id", autoIncrement: true });
-    const proveedorStore = db.createObjectStore("proveedores", { keyPath: "id", autoIncrement: true });
-    sucursalStore.createIndex("empresaId", "empresaId", { unique: false });
 
-    // Crear el store para las facturas
-    const facturaStore = db.createObjectStore("facturas", { keyPath: "id", autoIncrement: true });
-    facturaStore.createIndex("sucursalId", "sucursalId", { unique: false });
-    facturaStore.createIndex("proveedorId", "proveedorId", { unique: false });
+    if (!db.objectStoreNames.contains('empresas')) {
+        db.createObjectStore("empresas", { keyPath: "id", autoIncrement: true });
+    }
+    if (!db.objectStoreNames.contains('sucursales')) {
+        const sucursalStore = db.createObjectStore("sucursales", { keyPath: "id", autoIncrement: true });
+        sucursalStore.createIndex("empresaId", "empresaId", { unique: false });
+    }
+    if (!db.objectStoreNames.contains('proveedores')) {
+        db.createObjectStore("proveedores", { keyPath: "id", autoIncrement: true });
+    }
 };
 
 request.onsuccess = function(event) {
@@ -20,7 +24,6 @@ request.onsuccess = function(event) {
     cargarEmpresas();
     cargarSucursales();
     cargarProveedores();
-    cargarFacturas();
 };
 
 request.onerror = function(event) {
@@ -36,7 +39,7 @@ function openTab(event, tabName) {
     document.getElementById(tabName).style.display = "block";
 }
 
-// Funciones para agregar datos a la base de datos
+// Función para agregar empresa
 document.getElementById('agregar-empresa').addEventListener('click', function() {
     const nombreEmpresa = document.getElementById('nombre-empresa').value;
     if (nombreEmpresa === '') {
@@ -54,6 +57,7 @@ document.getElementById('agregar-empresa').addEventListener('click', function() 
     };
 });
 
+// Función para cargar empresas en el select y listado
 function cargarEmpresas() {
     const empresaSelect = document.getElementById('empresa-sucursal');
     empresaSelect.innerHTML = '';
@@ -78,11 +82,12 @@ function cargarEmpresas() {
     };
 }
 
+// Función para agregar sucursal
 document.getElementById('agregar-sucursal').addEventListener('click', function() {
     const empresaId = document.getElementById('empresa-sucursal').value;
     const nombreSucursal = document.getElementById('nombre-sucursal').value;
-    if (nombreSucursal === '') {
-        Swal.fire('Error', 'El nombre de la sucursal no puede estar vacío', 'error');
+    if (nombreSucursal === '' || !empresaId) {
+        Swal.fire('Error', 'El nombre de la sucursal y la empresa deben estar seleccionados', 'error');
         return;
     }
 
@@ -97,23 +102,31 @@ document.getElementById('agregar-sucursal').addEventListener('click', function()
     };
 });
 
+// Función para cargar sucursales en el listado
 function cargarSucursales() {
     const sucursalLista = document.getElementById('lista-sucursales');
     sucursalLista.innerHTML = '';
-    const transaction = db.transaction(["sucursales"], "readonly");
+    const transaction = db.transaction(["sucursales", "empresas"], "readonly");
     const sucursalStore = transaction.objectStore("sucursales");
+    const empresaStore = transaction.objectStore("empresas");
 
     sucursalStore.openCursor().onsuccess = function(event) {
         const cursor = event.target.result;
         if (cursor) {
             const li = document.createElement('li');
-            li.textContent = cursor.value.nombre;
-            sucursalLista.appendChild(li);
+            // Obtener el nombre de la empresa asociada
+            const empresaRequest = empresaStore.get(cursor.value.empresaId);
+            empresaRequest.onsuccess = function() {
+                const empresaNombre = empresaRequest.result ? empresaRequest.result.nombre : 'Empresa desconocida';
+                li.textContent = `${cursor.value.nombre} (Empresa: ${empresaNombre})`;
+                sucursalLista.appendChild(li);
+            };
             cursor.continue();
         }
     };
 }
 
+// Función para agregar proveedor
 document.getElementById('agregar-proveedor').addEventListener('click', function() {
     const nombreProveedor = document.getElementById('nombre-proveedor').value;
     const diasCredito = parseInt(document.getElementById('dias-credito').value);
@@ -134,6 +147,7 @@ document.getElementById('agregar-proveedor').addEventListener('click', function(
     };
 });
 
+// Función para cargar proveedores en el listado
 function cargarProveedores() {
     const proveedorLista = document.getElementById('lista-proveedores');
     proveedorLista.innerHTML = '';
@@ -146,79 +160,6 @@ function cargarProveedores() {
             const li = document.createElement('li');
             li.textContent = `${cursor.value.nombre} - ${cursor.value.diasCredito} días de crédito`;
             proveedorLista.appendChild(li);
-            cursor.continue();
-        }
-    };
-}
-
-// Añadir evento al botón para agregar facturas
-document.getElementById('agregar-factura').addEventListener('click', function() {
-    const sucursalId = document.getElementById('sucursal-factura').value;
-    const proveedorId = document.getElementById('proveedor-factura').value;
-    const numeroFactura = document.getElementById('numero-factura').value;
-    const fechaEmision = document.getElementById('fecha-emision').value;
-    const montoFactura = parseFloat(document.getElementById('monto-factura').value);
-    
-    if (!sucursalId || !proveedorId || !numeroFactura || !fechaEmision || isNaN(montoFactura)) {
-        Swal.fire('Error', 'Complete todos los campos.', 'error');
-        return;
-    }
-
-    // Obtener los días de crédito del proveedor seleccionado
-    const transaction = db.transaction(["proveedores"], "readonly");
-    const proveedorStore = transaction.objectStore("proveedores");
-
-    proveedorStore.get(parseInt(proveedorId)).onsuccess = function(event) {
-        const proveedor = event.target.result;
-        const diasCredito = proveedor.diasCredito;
-
-        // Calcular la fecha de vencimiento
-        const fechaVencimiento = new Date(fechaEmision);
-        fechaVencimiento.setDate(fechaVencimiento.getDate() + diasCredito);
-        const fechaVencimientoString = fechaVencimiento.toISOString().split('T')[0];
-
-        // Guardar la factura en IndexedDB
-        const transactionFacturas = db.transaction(["facturas"], "readwrite");
-        const facturaStore = transactionFacturas.objectStore("facturas");
-
-        facturaStore.add({
-            sucursalId: parseInt(sucursalId),
-            proveedorId: parseInt(proveedorId),
-            numeroFactura,
-            fechaEmision,
-            fechaVencimiento: fechaVencimientoString,
-            monto: montoFactura,
-            estado: 'Pendiente'
-        });
-
-        transactionFacturas.oncomplete = function() {
-            Swal.fire('Éxito', 'Factura agregada correctamente', 'success');
-            cargarFacturas();
-        };
-    };
-});
-
-// Función para cargar las facturas en la tabla
-function cargarFacturas() {
-    const facturaLista = document.getElementById('lista-facturas');
-    facturaLista.innerHTML = '';
-    const transaction = db.transaction(["facturas"], "readonly");
-    const facturaStore = transaction.objectStore("facturas");
-
-    facturaStore.openCursor().onsuccess = function(event) {
-        const cursor = event.target.result;
-        if (cursor) {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${cursor.value.sucursalId}</td>
-                <td>${cursor.value.proveedorId}</td>
-                <td>${cursor.value.numeroFactura}</td>
-                <td>${cursor.value.fechaEmision}</td>
-                <td>${cursor.value.fechaVencimiento}</td>
-                <td>${cursor.value.monto.toFixed(2)}</td>
-                <td>${cursor.value.estado}</td>
-            `;
-            facturaLista.appendChild(row);
             cursor.continue();
         }
     };
