@@ -9,6 +9,7 @@
     <!-- Librerías para exportar -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         /* Estilos para los modales */
@@ -72,6 +73,32 @@
         th {
             background-color: #f2f2f2;
         }
+        /* Estilos para botones de acción */
+        .acciones {
+            margin-bottom: 20px;
+        }
+        .acciones button {
+            margin-right: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        /* Estilos para filtros */
+        .filtros, .filtro-estado, .ordenamiento, .busquedas {
+            margin-bottom: 15px;
+        }
+        .filtros label, .filtro-estado label, .ordenamiento label, .busquedas input {
+            margin-right: 10px;
+        }
+        /* Estilos para filas según estado */
+        .sin-pago {
+            background-color: #f8d7da; /* Rojo claro */
+        }
+        .pendiente {
+            background-color: #fff3cd; /* Amarillo claro */
+        }
+        .pagada {
+            background-color: #d4edda; /* Verde claro */
+        }
     </style>
 </head>
 <body>
@@ -86,7 +113,8 @@
         <button class="btn" id="editar-factura-btn" disabled>Editar Factura</button>
         <button class="btn" id="eliminar-factura-btn" disabled>Eliminar Factura</button>
         <button class="btn" id="pagar-facturas-btn" disabled>Pagar Facturas</button>
-        <button class="btn" id="generar-reporte-btn">Generar Reporte</button> <!-- Nuevo botón -->
+        <button class="btn" id="generar-reporte-btn">Generar Reporte</button> <!-- Botón existente -->
+        <button class="btn" id="exportar-tabla-btn">Exportar Tabla</button> <!-- Nuevo botón de exportación -->
     </div>
 
     <!-- Modal para agregar/editar factura -->
@@ -228,6 +256,10 @@
             <h3>Pagar Facturas Seleccionadas</h3>
             <div id="facturas-seleccionadas">
                 <!-- Aquí se mostrarán las facturas seleccionadas -->
+            </div>
+            <div class="form-group">
+                <label for="total-pendiente-modal">Total Pendiente:</label>
+                <span id="total-pendiente-modal">Q0.00</span>
             </div>
             <div class="form-group">
                 <label for="monto-total">Monto total a aplicar:</label>
