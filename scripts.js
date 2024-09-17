@@ -2,7 +2,7 @@
 
 // Crear/abrir la base de datos de IndexedDB
 let db;
-const request = indexedDB.open("GestionDB", 2); // Versión 2 para posibles actualizaciones futuras
+const request = indexedDB.open("GestionDB", 2);
 
 request.onupgradeneeded = function(event) {
     db = event.target.result;
@@ -37,12 +37,11 @@ request.onsuccess = function(event) {
     db = event.target.result;
     cargarSucursales();
     cargarProveedores();
-    cargarEmpresas();
+    cargarFacturas();
     cargarSucursalesPago();
     cargarSucursalesFiltro();
     cargarEmpresasFiltro();
     cargarProveedoresFiltro();
-    cargarFacturas();
 };
 
 request.onerror = function(event) {
@@ -53,15 +52,7 @@ request.onerror = function(event) {
 let facturasSeleccionadas = [];
 let facturaSeleccionada = null;
 
-// Función para cargar empresas en los selects (si es necesario)
-function cargarEmpresas() {
-    const empresaSelect = document.getElementById('filtro-empresa');
-    // Asumiendo que tienes un select para empresas en el modal de agregar/editar factura
-    // Si no es necesario, puedes eliminar esta función
-    // Puedes implementar la carga de empresas si es parte de tu aplicación
-}
-
-// Función para cargar sucursales en los selects de agregar/editar factura
+// Función para cargar sucursales en los select
 function cargarSucursales() {
     const sucursalSelect = document.getElementById('sucursal-factura');
     sucursalSelect.innerHTML = '<option value="">Seleccione una sucursal</option>';
@@ -141,10 +132,10 @@ function cargarEmpresasFiltro() {
     };
 }
 
-// Función para cargar proveedores en los selects
-function cargarProveedores() {
-    const proveedorSelect = document.getElementById('proveedor-factura');
-    proveedorSelect.innerHTML = '<option value="">Seleccione un proveedor</option>';
+// Función para cargar proveedores en el filtro
+function cargarProveedoresFiltro() {
+    const proveedorSelect = document.getElementById('filtro-proveedor');
+    proveedorSelect.innerHTML = '<option value="todos">Todos</option>';
 
     const transaction = db.transaction(["proveedores"], "readonly");
     const proveedorStore = transaction.objectStore("proveedores");
@@ -161,10 +152,10 @@ function cargarProveedores() {
     };
 }
 
-// Función para cargar proveedores en el filtro
-function cargarProveedoresFiltro() {
-    const proveedorSelect = document.getElementById('filtro-proveedor');
-    proveedorSelect.innerHTML = '<option value="todos">Todos</option>';
+// Función para cargar proveedores en los select
+function cargarProveedores() {
+    const proveedorSelect = document.getElementById('proveedor-factura');
+    proveedorSelect.innerHTML = '<option value="">Seleccione un proveedor</option>';
 
     const transaction = db.transaction(["proveedores"], "readonly");
     const proveedorStore = transaction.objectStore("proveedores");
@@ -233,27 +224,31 @@ function cargarFacturas() {
                             (filtroProveedor === 'todos' || factura.proveedorId == filtroProveedor) &&
                             (filtroBanco === 'todos' || factura.banco === filtroBanco)) {
 
-                            // Aplicar búsqueda múltiple por número de factura
-                            if (buscarFacturas.length > 0) {
-                                const coincideFactura = buscarFacturas.some(term => factura.numeroFactura.toLowerCase().includes(term));
-                                if (!coincideFactura) {
-                                    cursor.continue();
-                                    return;
-                                }
-                            }
+                            // Filtrar por estado
+                            if (filtrarPorEstado(factura)) {
 
-                            // Aplicar búsqueda múltiple por boleta ID
-                            if (buscarBoletas.length > 0) {
-                                const boletaEncontrada = factura.boletas.some(boleta =>
-                                    buscarBoletas.some(term => boleta.boletaId.toLowerCase().includes(term))
-                                );
-                                if (!boletaEncontrada) {
-                                    cursor.continue();
-                                    return;
+                                // Búsqueda múltiple por número de factura
+                                if (buscarFacturas.length > 0) {
+                                    const coincideFactura = buscarFacturas.some(term => factura.numeroFactura.toLowerCase().includes(term));
+                                    if (!coincideFactura) {
+                                        cursor.continue();
+                                        return;
+                                    }
                                 }
-                            }
 
-                            facturasFiltradas.push(factura);
+                                // Búsqueda múltiple por boleta ID
+                                if (buscarBoletas.length > 0) {
+                                    const boletaEncontrada = factura.boletas.some(boleta =>
+                                        buscarBoletas.some(term => boleta.boletaId.toLowerCase().includes(term))
+                                    );
+                                    if (!boletaEncontrada) {
+                                        cursor.continue();
+                                        return;
+                                    }
+                                }
+
+                                facturasFiltradas.push(factura);
+                            }
                         }
                     };
                 };
@@ -275,6 +270,35 @@ function cargarFacturas() {
             }
         }
     };
+}
+
+// Función para filtrar por estado
+function filtrarPorEstado(factura) {
+    const hoy = new Date();
+    const fechaVencimiento = new Date(factura.fechaVencimiento);
+    const diferenciaDias = Math.ceil((fechaVencimiento - hoy) / (1000 * 60 * 60 * 24));
+
+    // Asumiendo que tienes un elemento para seleccionar el estado; de lo contrario, ajustar según tu lógica
+    const filtroEstado = 'todas'; // Ajustar según tu implementación
+
+    switch (filtroEstado) {
+        case 'todas':
+            return true;
+        case 'pagadas':
+            return factura.estado === 'Pagada';
+        case 'porPagar':
+            return factura.estado !== 'Pagada';
+        case 'vencidas':
+            return factura.estado !== 'Pagada' && fechaVencimiento < hoy;
+        case 'pagoPendiente':
+            return factura.estado === 'Pendiente' && factura.montoPendiente < factura.montoFactura;
+        case 'prontoVencer':
+            return factura.estado !== 'Pagada' && diferenciaDias >= 0 && diferenciaDias <= 8;
+        case 'porPagarHoy':
+            return factura.estado !== 'Pagada' && fechaVencimiento.toDateString() === hoy.toDateString();
+        default:
+            return true;
+    }
 }
 
 // Función para ordenar facturas
@@ -300,7 +324,7 @@ function ordenarFacturas(facturas, criterio) {
     });
 }
 
-// Función para renderizar una factura en la tabla
+// Función para renderizar una factura
 function renderFactura(factura) {
     const tableBody = document.getElementById('facturas-table');
     const row = document.createElement('tr');
@@ -371,8 +395,8 @@ document.addEventListener('change', function(event) {
             facturaSeleccionada = null;
         }
 
-        // Actualizar el total pendiente seleccionado
-        actualizarTotalPendiente();
+        // Actualizar el total pendiente seleccionado en el modal
+        actualizarTotalPendienteModal();
 
         // Actualizar el estado de los botones de acción
         actualizarBotonesAccion();
@@ -416,18 +440,11 @@ function actualizarBotonesAccion() {
     }
 }
 
-// Función para actualizar el total pendiente seleccionado
-function actualizarTotalPendiente() {
+// Función para actualizar el total pendiente en el modal de pago
+function actualizarTotalPendienteModal() {
     let totalPendiente = facturasSeleccionadas.reduce((total, factura) =>
         total + parseFloat(factura.montoPendiente), 0);
-
-    // Actualizar el total pendiente en la tabla principal
-    document.getElementById('total-pendiente').innerText = `Q${totalPendiente.toFixed(2)}`;
-
-    // También actualizar el total pendiente en el modal de pago si está abierto
-    if (document.getElementById('pago-modal').style.display === 'flex') {
-        document.getElementById('monto-total-modal').innerText = `Total Pendiente: Q${totalPendiente.toFixed(2)}`;
-    }
+    document.getElementById('total-pendiente-modal').innerText = `Q${totalPendiente.toFixed(2)}`;
 }
 
 // Evento para abrir el modal de agregar factura
@@ -627,11 +644,11 @@ function eliminarFactura(facturaId) {
 function limpiarCamposFactura() {
     document.getElementById('sucursal-factura').value = '';
     document.getElementById('proveedor-factura').value = '';
-    document.getElementById('dias-credito-factura').value = '';
     document.getElementById('numero-factura').value = '';
     document.getElementById('fecha-emision').value = '';
     document.getElementById('fecha-vencimiento').value = '';
     document.getElementById('monto-factura').value = '';
+    document.getElementById('dias-credito-factura').value = '';
 }
 
 // Evento para cargar los días de crédito al seleccionar un proveedor
@@ -673,7 +690,7 @@ function calcularFechaVencimiento() {
     }
 }
 
-// Evento para abrir el modal de pago al hacer clic en "Pagar Facturas"
+// Evento para abrir el modal de pagar facturas al hacer clic en "Pagar Facturas"
 document.getElementById('pagar-facturas-btn').addEventListener('click', function () {
     if (facturasSeleccionadas.length === 0) {
         Swal.fire('Error', 'Por favor seleccione al menos una factura para pagar.', 'error');
@@ -730,13 +747,12 @@ document.getElementById('pagar-facturas-btn').addEventListener('click', function
     }
 });
 
-// Función para mostrar el modal de pago con las facturas seleccionadas y el total pendiente
+// Función para mostrar el modal de pago con las facturas seleccionadas
 function mostrarModalPago() {
     const facturasSeleccionadasDiv = document.getElementById('facturas-seleccionadas');
     facturasSeleccionadasDiv.innerHTML = '';
 
     let totalPendiente = 0;
-    let empresas = new Set();
 
     // Obtener detalles de todas las facturas seleccionadas
     const transaction = db.transaction(["facturas", "sucursales", "proveedores", "empresas"], "readonly");
@@ -765,8 +781,6 @@ function mostrarModalPago() {
                     empresaRequest.onsuccess = function() {
                         const empresa = empresaRequest.result;
 
-                        empresas.add(empresa.nombre); // Agregar el nombre de la empresa
-
                         const facturaInfo = document.createElement('p');
                         facturaInfo.textContent = `Factura ID: ${factura.id}, Empresa: ${empresa.nombre}, Sucursal: ${sucursal.nombre}, Proveedor: ${proveedor.nombre}, Monto Pendiente: Q${factura.montoPendiente.toFixed(2)}`;
                         facturasSeleccionadasDiv.appendChild(facturaInfo);
@@ -776,20 +790,46 @@ function mostrarModalPago() {
 
                         // Una vez procesadas todas las facturas seleccionadas
                         if (facturasProcesadas === facturasSeleccionadas.length) {
-                            // Mostrar el total pendiente en el modal
-                            document.getElementById('monto-total-modal').innerText = `Total Pendiente: Q${totalPendiente.toFixed(2)}`;
-
-                            // Mostrar el modal de pago
+                            document.getElementById('total-pendiente-modal').innerText = `Q${totalPendiente.toFixed(2)}`;
                             document.getElementById('pago-modal').style.display = 'flex';
                         }
                     };
                 };
             };
         };
+
+        facturaRequest.onerror = function(event) {
+            console.error('Error al obtener la factura:', event.target.error);
+            Swal.fire('Error', 'No se pudo obtener la factura seleccionada.', 'error');
+        };
     });
 }
 
 // Función para aplicar pagos a las facturas seleccionadas
+function validarPago() {
+    const montoTotal = parseFloat(document.getElementById('monto-total').value);
+    const bancoSeleccionado = document.getElementById('banco').value;
+    const sucursalPagoSeleccionada = document.getElementById('sucursal-pago').value;
+
+    if (isNaN(montoTotal) || montoTotal <= 0) {
+        Swal.fire('Error', 'Por favor ingrese un monto válido.', 'error');
+        return false;
+    }
+
+    if (bancoSeleccionado === "") {
+        Swal.fire('Error', 'Por favor seleccione un banco.', 'error');
+        return false;
+    }
+
+    if (sucursalPagoSeleccionada === "") {
+        Swal.fire('Error', 'Por favor seleccione una sucursal para el pago.', 'error');
+        return false;
+    }
+
+    return true;
+}
+
+// Aplicar pagos a las facturas seleccionadas
 document.getElementById('aplicar-pago').addEventListener('click', function () {
     if (!validarPago()) return;
 
@@ -874,37 +914,13 @@ document.getElementById('aplicar-pago').addEventListener('click', function () {
             document.querySelectorAll('.factura-checkbox').forEach(checkbox => checkbox.checked = false);
             facturasSeleccionadas = [];
             facturaSeleccionada = null;
-            actualizarTotalPendiente();
+            actualizarTotalPendienteModal();
             actualizarBotonesAccion();
             cargarFacturas();
             document.getElementById('pago-modal').style.display = 'none';
         }
     };
 });
-
-// Función para validar el formulario de pago
-function validarPago() {
-    const montoTotal = parseFloat(document.getElementById('monto-total').value);
-    const bancoSeleccionado = document.getElementById('banco').value;
-    const sucursalPagoSeleccionada = document.getElementById('sucursal-pago').value;
-
-    if (isNaN(montoTotal) || montoTotal <= 0) {
-        Swal.fire('Error', 'Por favor ingrese un monto válido.', 'error');
-        return false;
-    }
-
-    if (bancoSeleccionado === "") {
-        Swal.fire('Error', 'Por favor seleccione un banco.', 'error');
-        return false;
-    }
-
-    if (sucursalPagoSeleccionada === "") {
-        Swal.fire('Error', 'Por favor seleccione una sucursal para el pago.', 'error');
-        return false;
-    }
-
-    return true;
-}
 
 // Función para ver los detalles del pago realizado
 function verPago(facturaId) {
@@ -941,13 +957,14 @@ document.getElementById('close-modal').addEventListener('click', function() {
 document.getElementById('close-pago-modal').addEventListener('click', function() {
     document.getElementById('pago-modal').style.display = 'none';
     document.getElementById('facturas-seleccionadas').innerHTML = '';
-    document.getElementById('monto-total-modal').innerText = 'Total Pendiente: Q0.00';
+    document.getElementById('total-pendiente-modal').innerText = 'Q0.00';
+    limpiarSeleccionFacturas();
 });
 
 // Función para generar el reporte con facturas y boletas asociadas
 function generarReporte() {
     const reporteContenido = document.getElementById('reporte-contenido');
-    reporteContenido.innerHTML = ''; // Limpiar el contenido antes de generar el reporte
+    reporteContenido.innerHTML = '';
 
     const transaction = db.transaction(["facturas", "sucursales", "proveedores", "empresas"], "readonly");
     const facturaStore = transaction.objectStore("facturas");
@@ -1057,65 +1074,6 @@ document.getElementById('close-reporte-modal').addEventListener('click', functio
     document.getElementById('reporte-contenido').innerHTML = '';
 });
 
-// Exportar el reporte a Excel utilizando SheetJS
-document.getElementById('export-excel').addEventListener('click', function() {
-    const reporteTable = document.getElementById('reporte-table');
-    const workbook = XLSX.utils.table_to_book(reporteTable, {sheet: "Reporte"});
-    XLSX.writeFile(workbook, 'Reporte_Facturas.xlsx');
-    Swal.fire('Éxito', 'Reporte exportado a Excel correctamente.', 'success');
-});
-
-// Exportar el reporte a PDF utilizando jsPDF
-document.getElementById('export-pdf').addEventListener('click', function() {
-    const reporteTable = document.getElementById('reporte-table');
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'pt', 'a4');
-
-    doc.autoTable({ html: '#reporte-table', startY: 50 });
-    doc.save('Reporte_Facturas.pdf');
-    Swal.fire('Éxito', 'Reporte exportado a PDF correctamente.', 'success');
-});
-
-// Exportar el reporte a Imagen utilizando html2canvas
-document.getElementById('export-image').addEventListener('click', function() {
-    const reporteModalContent = document.getElementById('reporte-modal').querySelector('.modal-content');
-
-    html2canvas(reporteModalContent).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.href = imgData;
-        link.download = 'Reporte_Facturas.png';
-        link.click();
-        Swal.fire('Éxito', 'Reporte exportado a Imagen correctamente.', 'success');
-    }).catch(err => {
-        console.error('Error al exportar el reporte a imagen:', err);
-        Swal.fire('Error', 'No se pudo exportar el reporte a Imagen.', 'error');
-    });
-});
-
-// Listener para el botón "Exportar Tabla"
-document.getElementById('exportar-tabla-btn').addEventListener('click', function() {
-    // Mostrar opciones de exportación utilizando SweetAlert2
-    Swal.fire({
-        title: 'Exportar Tabla de Facturas',
-        text: 'Seleccione el formato al que desea exportar la tabla:',
-        icon: 'info',
-        showCancelButton: true,
-        showDenyButton: true,
-        confirmButtonText: 'Excel',
-        denyButtonText: 'PDF',
-        cancelButtonText: 'Imagen'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            exportarTablaExcel();
-        } else if (result.isDenied) {
-            exportarTablaPDF();
-        } else if (result.isDismissed) {
-            exportarTablaImagen();
-        }
-    });
-});
-
 // Función para exportar la tabla principal a Excel
 function exportarTablaExcel() {
     const facturaTable = document.querySelector('table');
@@ -1152,70 +1110,28 @@ function exportarTablaImagen() {
     });
 }
 
-// Función para ver los detalles del pago realizado
-function verPago(facturaId) {
-    const transaction = db.transaction(["facturas"], "readonly");
-    const facturaStore = transaction.objectStore("facturas");
-
-    facturaStore.get(facturaId).onsuccess = function(event) {
-        const factura = event.target.result;
-        const modal = document.getElementById('modal');
-        const detallesPago = document.getElementById('detalles-pago');
-
-        if (factura.boletas && factura.boletas.length > 0) {
-            const boletasDetalles = factura.boletas.map(boleta => `
-                <strong>Boleta ID:</strong> ${boleta.boletaId}<br>
-                <strong>Monto Pagado:</strong> Q${boleta.montoAplicado.toFixed(2)}<br>
-                <strong>Total de Boleta:</strong> Q${boleta.totalBoleta.toFixed(2)}<br>
-                <strong>Banco:</strong> ${boleta.banco}<br>
-                <strong>Fecha de Pago:</strong> ${boleta.fecha}<br>
-                <strong>Quién Depositó:</strong> ${boleta.sucursalDeposito}
-            `).join('<hr>');
-
-            detallesPago.innerHTML = boletasDetalles;
-            modal.style.display = 'flex';
+// Listener para el botón "Exportar Tabla"
+document.getElementById('exportar-tabla-btn').addEventListener('click', function() {
+    // Mostrar opciones de exportación utilizando SweetAlert2
+    Swal.fire({
+        title: 'Exportar Tabla de Facturas',
+        text: 'Seleccione el formato al que desea exportar la tabla:',
+        icon: 'info',
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: 'Excel',
+        denyButtonText: 'PDF',
+        cancelButtonText: 'Imagen'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            exportarTablaExcel();
+        } else if (result.isDenied) {
+            exportarTablaPDF();
+        } else if (result.isDismissed) {
+            exportarTablaImagen();
         }
-    };
-}
-
-// Función para exportar el reporte a Excel utilizando SheetJS
-function exportToExcel() {
-    const reporteTable = document.getElementById('reporte-table');
-    const workbook = XLSX.utils.table_to_book(reporteTable, {sheet: "Reporte"});
-    XLSX.writeFile(workbook, 'Reporte_Facturas.xlsx');
-}
-
-// Función para exportar el reporte a PDF utilizando jsPDF
-function exportToPDF() {
-    const reporteTable = document.getElementById('reporte-table');
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'pt', 'a4');
-
-    doc.autoTable({ html: '#reporte-table', startY: 50 });
-    doc.save('Reporte_Facturas.pdf');
-}
-
-// Función para exportar el reporte a Imagen utilizando html2canvas
-function exportToImage() {
-    const reporteModalContent = document.getElementById('reporte-modal').querySelector('.modal-content');
-
-    html2canvas(reporteModalContent).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.href = imgData;
-        link.download = 'Reporte_Facturas.png';
-        link.click();
     });
-}
-
-// Listener para exportar el reporte a Excel
-document.getElementById('export-excel').addEventListener('click', exportToExcel);
-
-// Listener para exportar el reporte a PDF
-document.getElementById('export-pdf').addEventListener('click', exportToPDF);
-
-// Listener para exportar el reporte a Imagen
-document.getElementById('export-image').addEventListener('click', exportToImage);
+});
 
 // Función para limpiar la selección de facturas
 function limpiarSeleccionFacturas() {
@@ -1224,57 +1140,20 @@ function limpiarSeleccionFacturas() {
     });
     facturasSeleccionadas = [];
     facturaSeleccionada = null;
-    actualizarTotalPendiente();
+    actualizarTotalPendienteModal();
     actualizarBotonesAccion();
 }
 
-// Listener para cerrar el modal de reporte y limpiar contenido
+// Función para cerrar el modal de reporte y limpiar contenido
 document.getElementById('close-reporte-modal').addEventListener('click', function() {
     document.getElementById('reporte-modal').style.display = 'none';
     document.getElementById('reporte-contenido').innerHTML = '';
 });
 
-// Listener para cerrar el modal de pago
+// Función para cerrar el modal de pago y limpiar contenido
 document.getElementById('close-pago-modal').addEventListener('click', function() {
     document.getElementById('pago-modal').style.display = 'none';
     document.getElementById('facturas-seleccionadas').innerHTML = '';
-    document.getElementById('monto-total-modal').innerText = 'Total Pendiente: Q0.00';
+    document.getElementById('total-pendiente-modal').innerText = 'Q0.00';
+    limpiarSeleccionFacturas();
 });
-
-// Listener para cerrar el modal de detalles de pago
-document.getElementById('close-modal').addEventListener('click', function() {
-    document.getElementById('modal').style.display = 'none';
-});
-
-// Listener para filtros
-document.querySelectorAll('.filtros select').forEach(select => {
-    select.addEventListener('change', cargarFacturas);
-});
-
-// Listener para filtros por estado
-document.querySelectorAll('.filtro-estado .btn-estado').forEach(button => {
-    button.addEventListener('click', function() {
-        const estado = this.getAttribute('data-estado');
-        aplicarFiltroEstado(estado);
-    });
-});
-
-// Función para aplicar filtro por estado
-function aplicarFiltroEstado(estado) {
-    // Asignar el valor del estado al filtro (puedes manejarlo con una variable global si es necesario)
-    window.filtroEstado = estado;
-    cargarFacturas();
-}
-
-// Listener para ordenar
-document.getElementById('ordenar-por').addEventListener('change', cargarFacturas);
-
-// Listeners para búsquedas
-document.getElementById('buscar-factura').addEventListener('input', cargarFacturas);
-document.getElementById('buscar-boleta').addEventListener('input', cargarFacturas);
-
-// Listener para exportar reporte desde el modal de reporte
-// (Ya implementado arriba)
-
-// Listener para exportar tabla principal desde el botón "Exportar Tabla"
-// (Ya implementado arriba)
