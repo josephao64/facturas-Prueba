@@ -113,8 +113,8 @@
         <button class="btn" id="editar-factura-btn" disabled>Editar Factura</button>
         <button class="btn" id="eliminar-factura-btn" disabled>Eliminar Factura</button>
         <button class="btn" id="pagar-facturas-btn" disabled>Pagar Facturas</button>
-        <button class="btn" id="generar-reporte-btn">Generar Reporte</button> <!-- Botón existente -->
-        <button class="btn" id="exportar-tabla-btn">Exportar Tabla</button> <!-- Nuevo botón de exportación -->
+        <button class="btn" id="generar-reporte-btn">Generar Reporte</button>
+        <button class="btn" id="exportar-tabla-btn">Exportar Tabla</button>
     </div>
 
     <!-- Modal para agregar/editar factura -->
@@ -216,24 +216,24 @@
         <input type="text" id="buscar-boleta" placeholder="Buscar por Boleta ID">
     </div>
 
-    <!-- Tabla de facturas -->
+    <!-- Tabla de facturas actualizada -->
     <table>
         <thead>
             <tr>
                 <th>Seleccionar</th>
                 <th>Empresa</th>
                 <th>Sucursal</th>
-                <th>Proveedor</th>
+                <th>Fecha de Factura</th>
                 <th>No. de Factura</th>
-                <th>Monto Factura</th>
-                <th>Fecha Vencimiento</th>
+                <th>Monto de Factura</th>
+                <th>Fecha de Vencimiento</th>
                 <th>Estado</th>
-                <th>Monto Pendiente</th>
-                <th>Boleta ID</th>
-                <th>Fecha Pago</th>
-                <th>Monto Pagado</th>
+                <th>Fecha de Abono</th>
+                <th>Abono</th>
+                <th>ID Boleta</th>
                 <th>Banco</th>
-                <th>Acciones</th>
+                <th>Forma de Pago</th>
+                <th>Quién Depositó</th>
             </tr>
         </thead>
         <tbody id="facturas-table">
@@ -242,14 +242,14 @@
         <tfoot>
             <tr>
                 <td colspan="8"></td>
-                <td><strong>Total Pendiente Seleccionado:</strong></td>
+                <td><strong>Total Abono Seleccionado:</strong></td>
                 <td id="total-pendiente">Q0.00</td>
                 <td colspan="5"></td>
             </tr>
         </tfoot>
     </table>
 
-    <!-- Modal para pagar facturas -->
+    <!-- Modal para pagar facturas actualizado -->
     <div id="pago-modal" class="modal">
         <div class="modal-content">
             <span id="close-pago-modal" class="close">&times;</span>
@@ -288,6 +288,16 @@
                     <option value="">Seleccione una sucursal</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label for="forma-pago">Forma de Pago:</label>
+                <select id="forma-pago">
+                    <option value="">Seleccione la forma de pago</option>
+                    <option value="Depósito">Depósito</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Efectivo">Efectivo</option>
+                </select>
+            </div>
             <button class="btn" id="aplicar-pago">Aplicar Pago</button>
         </div>
     </div>
@@ -316,17 +326,16 @@
                     <tr>
                         <th>Empresa</th>
                         <th>Sucursal</th>
-                        <th>Proveedor</th>
+                        <th>Fecha de Factura</th>
                         <th>No. de Factura</th>
-                        <th>Monto Factura</th>
-                        <th>Fecha Vencimiento</th>
+                        <th>Monto de Factura</th>
+                        <th>Fecha de Vencimiento</th>
                         <th>Estado</th>
-                        <th>Monto Pendiente</th>
-                        <th>Boleta ID</th>
-                        <th>Fecha Pago</th>
-                        <th>Monto Pagado</th>
-                        <th>Total de Boleta</th>
+                        <th>Fecha de Abono</th>
+                        <th>Abono</th>
+                        <th>ID Boleta</th>
                         <th>Banco</th>
+                        <th>Forma de Pago</th>
                         <th>Quién Depositó</th>
                     </tr>
                 </thead>

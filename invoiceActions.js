@@ -25,10 +25,12 @@ document.getElementById('close-factura-modal').addEventListener('click', functio
 document.getElementById('guardar-factura').addEventListener('click', function() {
     const sucursalId = document.getElementById('sucursal-factura').value;
     const proveedorId = document.getElementById('proveedor-factura').value;
-    const numeroFactura = document.getElementById('numero-factura').value;
+    const numeroFactura = document.getElementById('numero-factura').value.trim();
     const fechaEmision = document.getElementById('fecha-emision').value;
     const fechaVencimiento = document.getElementById('fecha-vencimiento').value;
     const montoFactura = parseFloat(document.getElementById('monto-factura').value);
+
+    console.log("Agregar factura:", { sucursalId, proveedorId, numeroFactura, fechaEmision, fechaVencimiento, montoFactura });
 
     if (!sucursalId || !proveedorId || !numeroFactura || !fechaEmision ||
         !fechaVencimiento || isNaN(montoFactura)) {
@@ -40,7 +42,7 @@ document.getElementById('guardar-factura').addEventListener('click', function() 
     const transactionFacturas = db.transaction(["facturas"], "readwrite");
     const facturaStore = transactionFacturas.objectStore("facturas");
 
-    facturaStore.add({
+    const facturaData = {
         sucursalId: parseInt(sucursalId),
         proveedorId: parseInt(proveedorId),
         numeroFactura,
@@ -50,13 +52,18 @@ document.getElementById('guardar-factura').addEventListener('click', function() 
         montoPendiente: montoFactura,
         estado: 'Pendiente',
         boletas: []
-    });
+    };
+
+    console.log("Factura a agregar:", facturaData);
+
+    facturaStore.add(facturaData);
 
     transactionFacturas.oncomplete = function() {
+        console.log("Factura agregada correctamente");
         Swal.fire('Éxito', 'Factura agregada correctamente', 'success');
         document.getElementById('factura-modal').style.display = 'none';
         limpiarCamposFactura();
-        cargarFacturas();
+        cargarFacturas(); // Asegúrate de que esta función está definida y refresca la tabla
     };
 
     transactionFacturas.onerror = function(event) {
@@ -120,7 +127,7 @@ function cargarDatosFactura(facturaId) {
 document.getElementById('actualizar-factura').addEventListener('click', function() {
     const sucursalId = document.getElementById('sucursal-factura').value;
     const proveedorId = document.getElementById('proveedor-factura').value;
-    const numeroFactura = document.getElementById('numero-factura').value;
+    const numeroFactura = document.getElementById('numero-factura').value.trim();
     const fechaEmision = document.getElementById('fecha-emision').value;
     const fechaVencimiento = document.getElementById('fecha-vencimiento').value;
     const montoFactura = parseFloat(document.getElementById('monto-factura').value);

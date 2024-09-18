@@ -1,3 +1,5 @@
+// filters.js
+
 // Variables para filtros y búsqueda
 let filtroEstado = 'todas';
 
@@ -17,10 +19,10 @@ document.querySelectorAll('.btn-estado').forEach(button => {
     });
 });
 
-// Modificar cargarFacturas para aplicar filtros y búsquedas
+// Función para cargar y renderizar facturas desde IndexedDB
 function cargarFacturas() {
     const tableBody = document.getElementById('facturas-table');
-    tableBody.innerHTML = '';
+    tableBody.innerHTML = ''; // Limpiar la tabla antes de cargar
 
     const filtroSucursal = document.getElementById('filtro-sucursal').value;
     const filtroEmpresa = document.getElementById('filtro-empresa').value;
@@ -103,6 +105,13 @@ function cargarFacturas() {
 
             // Renderizar las facturas
             facturasFiltradas.forEach(factura => renderFactura(factura));
+
+            // Mostrar mensaje si no hay facturas
+            if (facturasFiltradas.length === 0) {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `<td colspan="14" style="text-align: center;">No se encontraron facturas que coincidan con los criterios seleccionados.</td>`;
+                tableBody.appendChild(fila);
+            }
         }
     };
 }
